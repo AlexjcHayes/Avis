@@ -1,0 +1,203 @@
+{
+ "intents": [
+  {
+   "tag": "greeting",
+   "patterns": [
+    "Hi",
+    "Hello there",
+    "Is anyone there?",
+    "Hello",
+    "Good day",
+    "Whats up?",
+    "Hey Avis"
+   ],
+   "responses": [
+    "Hello!",
+    "Good to see you again!",
+    "Hi there, how can I help?"
+   ],
+   "context_set": ""
+  },
+  {
+   "tag": "goodbye",
+   "patterns": [
+    "quit",
+    "Goodnight"
+   ],
+   "responses": [
+    "Until we meet again!",
+    "Talk to you later",
+    "Goodbye!"
+   ],
+   "context_set": ""
+  },
+  {
+   "tag": "age",
+   "patterns": [
+    "how old are you Avis?",
+    "what is your age?",
+    "how old are you?",
+    "age?"
+   ],
+   "responses": [
+    "I don't have an age",
+    "I unfortunately don't have an age",
+    "If I had to guess my age, I am probably very young"
+   ],
+   "context_set": ""
+  },
+  {
+   "tag": "name",
+   "patterns": [
+    "what is your name",
+    "what should I call you",
+    "what's your name?"
+   ],
+   "responses": [
+    "You can call me Avis",
+    "I'm Avis!"
+   ],
+   "context_set": ""
+  },
+  {
+   "tag": "asking_Personal_Question",
+   "patterns": [
+    "How are you doing?",
+    "How are you feeling?",
+    "How are you doing today?",
+    "You doing great today?",
+    "How has your day been?",
+    "Hows your day going?",
+    "You doing okay?",
+    "How are you?"
+   ],
+   "responses": [
+    "I'm not doing too bad actually",
+    "I'm doing great",
+    "Pretty good actually!!! Thank you for asking!!!"
+   ],
+   "context_set": ""
+  },
+  {
+   "tag": "Voice_Detection_Activate",
+   "patterns": [
+    "Voice Detection"
+   ],
+   "responses": [
+    "I am listening through mic input",
+    "Listening through audio",
+    "Listening"
+   ],
+   "context_set": ""
+  },
+  {
+   "tag": "Voice_Detection_Deactivate",
+   "patterns": [
+    "Stop Detecting",
+    "Stop listening"
+   ],
+   "responses": [
+    "Okay I am listening through typed input",
+    "Listening through typed input"
+   ],
+   "context_set": ""
+  },
+  {
+   "tag": "Asking_General_Personal_Question",
+   "patterns": [
+    "What do you do?",
+    "What can you do?",
+    "What are your abilities?",
+    "What are your functions?",
+    "What are you able to do?"
+   ],
+   "responses": [
+    "I can do basic searches online, gather weather data, and respond to simple questions"
+   ],
+   "context_set": ""
+  },
+  {
+   "tag": "Making_a_Search",
+   "patterns": [
+    "Make a search for",
+    "Search for"
+   ],
+   "responses": [
+    "Making a search for",
+    "Searching for"
+   ],
+   "context_set": ""
+  },
+  {
+   "tag": "Asking_To_Make_a_Search",
+   "patterns": [
+    "I would like to make a search"
+   ],
+   "responses": [
+    "Sure thing, What would you like to search for?",
+    "What would you like to search for?"
+   ],
+   "context_set": ""
+  },
+  {
+   "tag": "Asking_about_the_weather",
+   "patterns": [
+    "What is the weather in",
+    "What is the temperature in",
+    "What is the max temperature in",
+    "What is the min temperature in",
+    "What is the humidity in",
+    "What is the wind speed in",
+    "what is the wind direction in"
+   ],
+   "responses": [
+    ""
+   ],
+   "context_set": ""
+  },
+  {
+   "tag": "Asking_about_the_time",
+   "patterns": [
+    "What time is it",
+    "what is the time",
+    "Tell me the time",
+    "What is the time Avis?"
+   ],
+   "responses": [
+    ""
+   ],
+   "context_set": ""
+  },
+  {
+   "tag": "Asking_about_the_date",
+   "patterns": [
+    "What's the date?",
+    "tell me the date",
+    "what is the date today?",
+    "What is today's date?"
+   ],
+   "responses": [
+    ""
+   ],
+   "context_set": ""
+  },
+  {
+   "tag": "Doing_math",
+   "patterns": [
+    "What is 2 * 4?",
+    "what is 1000 / 12?",
+    "What's 2 + 2?",
+    "what is 3 * 9?",
+    "what is 12 / 6",
+    "What is 6 * 4 + 8",
+    "tell me 6 * 4",
+    "hey avis, what's 9 * 7",
+    "hey avis, what is 2* 8?"
+   ],
+   "responses": [
+    ""
+   ],
+   "context_set": ""
+  }
+ ]
+}
