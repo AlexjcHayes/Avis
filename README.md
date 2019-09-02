@@ -21,7 +21,7 @@
 - have object classification (Maybe) (take forever to implement)
 - implement an interface (going to have to take out the While loop in the chat method since the kivy eliminates the need for it and make this file one big kivy class)
 - add visual effects (DO this later)
-- have it guess the category of unknown words and phrases (A Strong Maybe) (Need a lot of data to work from) (Possibly need it to be able to append to the intent.json file)
+(Work in Progress)- have it guess the category of unknown words and phrases (A Strong Maybe) (Need a lot of data to work from) (Possibly need it to be able to append to the intent.json file)
 -have it not wait for the speech response to finish playing before being ready to display "You: " for user input (multi threading)
 - Have it recognize objects with webcam
 
