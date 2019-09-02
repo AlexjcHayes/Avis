@@ -21,38 +21,15 @@ import datetime
 import calendar
 import matplotlib as plt
 
-""""  Agenda
 
-% remember if trying to add things to have a space after the comma %
-
-
-(DONE)-fix the try and except and find a way to have it train when I want it to
-(DONE)-compare old files to make sure they haven't been changed
-    -might have to have it save twice, one as and old and one as a new
-    -then check to see if the new one matches the old (The updated intents file will always be the new) then it would retrain the model if the file has been changed
-(DONE)- implement voice (maybe have it detect when you're either typing or talking)
-    -make it so that it detects either voice or type
-(DONE)- implement some sort of text to speech function for Theo
-- implement system commands
-(DONE)- have it make online searches based off of custom phrases
-(DONE)- Check to make sure there is an internet connection to connect to the Google API
-(DONE)- have it parse out certain phrases in internet search request
-(DONE)- have it give the weather(Might have to parse the data from google using re (?P<location>\w+) (or from the video)
-(DONE)- have it do simple math
-- have object classification (Maybe) (take forever to implement)
-- implement an interface (going to have to take out the While loop in the chat method since the kivy eliminates the need for it and make this file one big kivy class)
-- add visual effects (DO this later)
-- have it guess the category of unknown words and phrases (A Strong Maybe) (Need a lot of data to work from) (Possibly need it to be able to append to the intent.json file)
--have it not wait for the speech response to finish playing before being ready to display "You: " for user input (multi threading)
-- Have it recognize objects with webcam
-
-"""
 #  Variables #
 training = []
 output = []
-retrain_Var = False  # To force train the model (Set to False by Default)
+retrain_Var = True  # To force train the model (Set to False by Default)
 global history
 ##################### Functions
+
+# Main functions
 def AI_Brain(s, words):  # The brain processing the responses
     bag = [0 for _ in range(len(words))]
     s_words = nltk.word_tokenize(s)
@@ -141,6 +118,7 @@ def chat():
                         else:
                             sorry = "Sorry I didn't get that. Could you try typing or saying it in another way?"
                             print("Sorry I didn't get that. Could you try typing or saying it in another way?")
+                            lowConfidenceInput(voiceInput)
                             speak = pyttsx3.init()
                             speak.say(sorry)
                             speak.runAndWait()
@@ -162,6 +140,7 @@ def chat():
                         else:
                             sorry = "Sorry I didn't get that. Could you try typing or saying it in another way?"
                             print("Sorry I didn't get that. Could you try typing or saying it in another way?")
+                            lowConfidenceInput(voiceInput)
                             speak = pyttsx3.init()
                             speak.say(sorry)
                             speak.runAndWait()
@@ -259,6 +238,7 @@ def chat():
                 else:
                     sorry = "Sorry I didn't get that. Could you try typing or saying it in another way?"
                     print("Sorry I didn't get that. Could you try typing or saying it in another way?")
+                    lowConfidenceInput(inp)
                     speak = pyttsx3.init()
                     speak.say(sorry)
                     speak.runAndWait()
@@ -349,8 +329,7 @@ def jsonCheck():
                 data = json.load(file)
             with open("intents_original.json") as file:
                 data_original = json.load(file)
-        elif (os.path.exists(glob.glob("intents.json")[0]) and not os.path.exists(
-                glob.glob("intents_original.json")[0])):
+        elif (os.path.exists(glob.glob("intents.json")[0]) and not os.path.exists(glob.glob("intents_original.json")[0])):
             with open("intents.json") as file:
                 data = json.load(file)
 
@@ -369,6 +348,9 @@ def jsonCheck():
         with open("intents_original.json") as file:
             data_original = json.load(file)
 
+
+
+# Internet Functions
 def check_internet():  # To check if you have a internet connection to connect to the Google API
     url='http://www.google.com/'
     timeout=5
@@ -404,9 +386,12 @@ def make_search(user_search):  # puts together the online searching function (Ca
     query = searchingParse(user_search)
     searchingOnline(query)
 
+
+
+# Weather function
 def weatherParse(user_input):
     parse_list = ["what is the ", "give me the "]  # connect this to the json file later
-    weather_info_list = ["weather", "temperature", "max temperature", "min temperature", "humidity", "wind speed", "wind direction","pressure"]
+    weather_info_list = ["weather", "temperature", "max temperature", "min temperature", "humidity", "wind speed", "wind direction", "pressure"]
     parsed = user_input
     first_index = 1
     parse_out = ""
@@ -437,6 +422,8 @@ def weatherParse(user_input):
         city_name = parsed
     return weather_info,city_name
 
+
+# Retrain model function
 def retrain_Model_Check(retrain):
     if ((data != data_original) and retrain == False):
         response = input("The intents file has been changed. Would you like to retrain the model? y/n ")
@@ -477,6 +464,9 @@ def retrain_Model_Check(retrain):
             except:  # same thing as null pointer in C# & Java
                 train()
 
+
+
+# Date and time functions
 def get_time():
     currentDT = datetime.datetime.now()
     hour = currentDT.hour % 12
@@ -492,6 +482,9 @@ def get_date():
     year  = currentDT.year
     return month, day, year
 
+
+
+# Math functions
 def do_math_parse(math_input):
     parse_list = ["what is ", "tell me ", "what's ", "hey avis, what's ", "hey avis, what is "]  # connect this to the json file later
     parsed = math_input
@@ -513,6 +506,60 @@ def do_math_parse(math_input):
 def do_math(input):
     result = do_math_parse(input)
     return round(eval(result))
+
+
+
+#Low Confidence input
+
+def make_Learn_Doc():
+    LearningDoc = open("LearningDoc.json", "a+")
+    LearningDoc.write(json.dumps("Hello", indent=1))
+    LearningDoc.close()
+
+def learnDocFormat(intentList): # Have it be able to append to an already existing tag in the correct spot.
+    format = {
+   "intents": intentList
+  }
+    return format
+
+def lowConfidenceInput(input):
+    lowConfidenceDoc = open("lowConfidenceInput.json", "a+")
+    lowConfidenceDoc.write('\n')
+    lowConfidenceDoc.write(json.dumps(input, indent=1))
+    lowConfidenceDoc.close()
+
+def increaseConfidence(): # useful retrain function (needs to delete already implemented phrases from the lowConfidenceInput.json) and also need to add when there is a new tag being made
+    with open("lowConfidenceInput.json") as file:
+        lowConfidenceData = json.load(file)
+    for phrase in lowConfidenceData:
+        print("Enter tag for "+"'"+phrase+"'")
+        tag = input("tag: ")
+        print(lowConfidenceData)
+        print(data["intents"])
+        dataTemp = data["intents"] # stores the whole intents file into this variable
+        #print(dataTemp) # Debug
+        for tags in data["intents"]: #checking if a the tag already exists
+            index = dataTemp.index(tags) # get the index of the tag
+            print("The index is: ", index)
+            if tags["tag"] == tag:
+                print("It is: ", dataTemp[index]) # Debug
+                print("yaaayy") # append the new phrase here # Debug
+                tags["patterens"] = tags["patterns"].append(phrase)
+                print(tags["patterns"]) # make it properly append to the right spot in the intents.json file , might have to store the file in a variable and then append and then reformat it at the en
+                print("\n")
+                print("Here: ", dataTemp[index]["patterns"])
+                intents = open("intents.json", "w")  # to save it as an original file to compare later
+                intents.write(json.dumps(learnDocFormat(dataTemp), indent=1))
+                intents.close()
+            else:
+                print("nope")
+
+
+        # Code to auto format a brand new tag
+
+
+
+        #print(learnDocFormat(tag, phrase))
 ##############################################################################################
 #### ON Startup ######
 jsonCheck()
@@ -531,8 +578,9 @@ except:
 ##########################
 
 ########## Run ########
-chat()
+#chat()
+#make_Learn_Doc()
+#print(learnDocFormat("blob"))
+increaseConfidence()
 
-
-#print(do_math_parse("what is 2 * 2"))
 #subprocess.Popen("C:\Program Files (x86)\Steam\Steam.exe")  # work on this later

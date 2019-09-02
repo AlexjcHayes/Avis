@@ -5,8 +5,6 @@
    "patterns": [
     "Hi",
     "Hello there",
-    "Is anyone there?",
-    "Hello",
     "Good day",
     "Whats up?",
     "Hey Avis"
@@ -16,12 +14,13 @@
     "Good to see you again!",
     "Hi there, how can I help?"
    ],
-   "context_set": ""
+   "context_set": "",
+   "patterens": null
   },
   {
    "tag": "goodbye",
    "patterns": [
-   "quit",
+    "quit",
     "Goodnight"
    ],
    "responses": [
@@ -29,7 +28,8 @@
     "Talk to you later",
     "Goodbye!"
    ],
-   "context_set": ""
+   "context_set": "",
+   "patterens": null
   },
   {
    "tag": "age",
@@ -102,14 +102,14 @@
    ],
    "context_set": ""
   },
-    {
+  {
    "tag": "Asking_General_Personal_Question",
    "patterns": [
-    "What do you do?",
-    "What can you do?",
+    "do you do?",
+    "can you do?",
     "What are your abilities?",
     "What are your functions?",
-    "What are you able to do?"
+    "are you able to do?"
    ],
    "responses": [
     "I can do basic searches online, gather weather data, and respond to simple questions"
@@ -128,7 +128,7 @@
    ],
    "context_set": ""
   },
-    {
+  {
    "tag": "Asking_To_Make_a_Search",
    "patterns": [
     "I would like to make a search"
@@ -154,7 +154,8 @@
     ""
    ],
    "context_set": ""
-  },{
+  },
+  {
    "tag": "Asking_about_the_time",
    "patterns": [
     "What time is it",
@@ -166,7 +167,8 @@
     ""
    ],
    "context_set": ""
-  },{
+  },
+  {
    "tag": "Asking_about_the_date",
    "patterns": [
     "What's the date?",
@@ -178,7 +180,8 @@
     ""
    ],
    "context_set": ""
-  },{
+  },
+  {
    "tag": "Doing_math",
    "patterns": [
     "What is 2 * 4?",
@@ -196,6 +199,5 @@
    ],
    "context_set": ""
   }
-
  ]
 }
