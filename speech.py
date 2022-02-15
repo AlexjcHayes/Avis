@@ -14,6 +14,7 @@ def recognize_speech_from_mic(recognizer, microphone):
                otherwise a string containing the transcribed text
     """
     # check that recognizer and microphone arguments are appropriate type
+
     if not isinstance(recognizer, sr.Recognizer):
         raise TypeError("`recognizer` must be `Recognizer` instance")
 
@@ -58,7 +59,7 @@ def callback(self, audio):
 def speechMain():
 
     recognizer = sr.Recognizer()
-    microphone = sr.Microphone()
+    microphone = sr.Microphone(3) # the "3" is the index of the microphone device (in this case it relates the PNP mic)
     #print("Speak!")
     voiceInput = recognize_speech_from_mic(recognizer, microphone)
     return voiceInput["transcription"]

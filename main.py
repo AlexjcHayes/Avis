@@ -18,16 +18,27 @@ import os
 import pyttsx3
 import requests
 import datetime
+import playsound
+from gtts import gTTS
 import calendar
 import matplotlib as plt
-
+import smtplib
+from email.message import EmailMessage
 
 #  Variables #
 training = []
 output = []
-retrain_Var = True  # To force train the model (Set to False by Default)
+retrain_Var = False  # To force train the model (Set to False by Default)
 global history
 ##################### Functions
+'''
+AGENDA
+- continue to work on the increase confidence function
+- add other functionality to it
+
+
+
+'''
 
 # Main functions
 def AI_Brain(s, words):  # The brain processing the responses
@@ -43,21 +54,28 @@ def AI_Brain(s, words):  # The brain processing the responses
     return np.array(bag)
 
 def chat():
-    print("Start typing to Theo (type 'quit') to stop. To use voice detection type 'voice detection'")
+    print("Start typing to Avis (type 'quit') to stop. To use voice detection type 'voice detection'")
     voice_detection = False
     search_active = False
     weather_active = False
+    sendMessage_active=False
     while True:
         if(voice_detection and check_internet()):  # Voice Input
             print(colored("You are now using voice detection. Say 'Stop Detecting' to deactivate", "blue"))
             while True:
-                voiceInput = voice.speechMain()
+
+                if (not sendMessage_active):
+                    voiceInput = voice.speechMain()
+                else:
+                    voiceInput = sendMessageParse(voiceInput)
+                    #print("voiceInput IS: " + inp)  # debug
                 if(voiceInput is not None): # prevents the model to not interpret "None" from voiceInput
                     print("You: ", colored(voiceInput, "green"))
-                    results = model.predict([AI_Brain(voiceInput, words)])[0]
-                    results_index = np.argmax(results)
-                    tag = labels[results_index]
-                    confidence = results[results_index] * 100
+                    # results = model.predict([AI_Brain(voiceInput, words)])[0]
+                    # results_index = np.argmax(results)
+                    # tag = labels[results_index]
+                    # confidence = results[results_index] * 100
+                    results, results_index, tag, confidence = computeUserInput(voiceInput) # this replaces the code above
                     if (("search for" in voiceInput) or ("make a search for" in voiceInput)):
                         if (confidence > 80):
                             search_active = True
@@ -68,7 +86,12 @@ def chat():
                             print(hour, ":", minute, ":", second)
                             speak.say(
                                 "The time is " + str(hour) + " " + str(minute) + " and " + str(second) + " seconds")
-
+                    if (tag == "Send_a_text_Message"):
+                        if (confidence > 80):
+                            sendMessage_active = True
+                            inp = sendMessageParse(inp)
+                            #print("working") # Debug
+                            continue
                     if (tag == "Doing_math"):
                         if (confidence > 80):
                             equation = do_math_parse(inp.lower())
@@ -83,14 +106,7 @@ def chat():
                             speak.say("The date is " + str(month) + " " + str(day) + " " + str(year))
                     if (tag == "Asking_about_the_weather"):
                         if (confidence > 80):
-                            try:
-                                weather_active = True
-                                weather_info, city = weatherParse(voiceInput)
-                                gathered_weather_info = weather.get_weather(weather_info, city)
-                            except:
-                                weather_active = False
-                                print("Sorry, I couldn't get the weather information there")
-                                speak.say("Sorry, I couldn't get the weather information there")
+                            weather_active, city, gathered_weather_info = getWeatherInfo(voiceInput)
 
                     if (retrain_Var == False):  # So it doesn't break when retraining
                         if (confidence > 80):
@@ -100,19 +116,21 @@ def chat():
                             response = random.choice(responses)
                             print("Tag: ",tag," Confidence: ",confidence,"%") # Debug
                             if (search_active):
-                                print(response, searchingParse(voiceInput))
-                            elif (weather_active):
-                                print("In " + city + "," + gathered_weather_info)
-                            else:
-                                print(response)
-                            speak = pyttsx3.init()
-                            if (search_active):  # Make it seem more user friendly
-                                speak.say(response + searchingParse(voiceInput))
+                                print(response, searchingParse(inp.lower()))
+                                speak.say(response + searchingParse(inp.lower()))
                                 search_active = False
-                            elif (weather_active):
+                            elif (weather_active and sendMessage_active):
+                                speak.say("Sending to your device now")
+                                sendTextMessage("In " + city.capitalize() + "," + str(gathered_weather_info),
+                                                "2404578587@messaging.sprintpcs.com")
+                                sendMessage_active = False
+                                weather_active = False
+                            elif (weather_active and sendMessage_active == False):
+                                print("In " + city.capitalize() + "," + str(gathered_weather_info))
                                 speak.say("In " + city + "," + gathered_weather_info)
                                 weather_active = False
                             else:
+                                print(response)
                                 speak.say(response)
                             speak.runAndWait()
                         else:
@@ -159,90 +177,120 @@ def chat():
 
 
         if(not voice_detection):  # Typed Input
-            inp = input("You: ")
+            if(not sendMessage_active):
+                inp = input("You: ")
+            else:
+                inp=sendMessageParse(inp)
+                print("INP IS: "+inp) #debug
             internet_check = check_internet()
+            if(inp != ""):  # keeps empty strings from being sent to the model
+                # this is the actual computing part for understanding input
+                results,results_index,tag,confidence = computeUserInput(inp)
+                speak = pyttsx3.init()
+                if (inp.lower() == "quit"):
+                    quit()
+                '''
+                if(inp.lower() == "retrain"):
+                    retrain_Var = True
+                    retrain_Model_Check(retrain_Var)
+                    print("HI")
+                '''
+                if(tag=="Send_a_text_Message"):
+                    if(confidence>80):
+                        sendMessage_active=True
+                        inp=sendMessageParse(inp)
+                        #print("working")
+                        continue
+                if (tag == "Making_a_Search"):
+                    if(confidence > 80):
+                        search_active = True
+                        make_search(inp.lower())
+                if (tag == "Asking_about_the_time"):
+                    if(confidence > 80):
+                        hour, minute, second = get_time()
+                        print(hour, ":", minute, ":", second)
+                        speak.say("The time is " + str(hour) + " " + str(minute) + " and " + str(second) + " seconds")
 
-            results = model.predict([AI_Brain(inp, words)])[0]
-            results_index = np.argmax(results)
-            tag = labels[results_index]
-            confidence = results[results_index]*100
-            speak = pyttsx3.init()
-            if inp.lower() == "quit":
-                quit()
-            '''
-            if(inp.lower() == "retrain"):
-                retrain_Var = True
-                retrain_Model_Check(retrain_Var)
-                print("HI")
-            '''
-            if (tag == "Making_a_Search"):
-                if(confidence > 80):
-                    search_active = True
-                    make_search(inp.lower())
-            if (tag == "Asking_about_the_time"):
-                if(confidence > 80):
-                    hour, minute, second = get_time()
-                    print(hour, ":", minute, ":", second)
-                    speak.say("The time is " + str(hour) + " " + str(minute) + " and " + str(second) + " seconds")
+                if (tag == "Asking_about_the_date"):
+                    if(confidence > 80):
+                        month, day, year = get_date()
+                        print("Month: ", month, " Day: ", day, " Year: ", year)
+                        speak.say("The date is " + str(month) + " " + str(day) + " " + str(year))
+                if (tag == "Doing_math"):
+                    if(confidence > 80):
+                        equation = do_math_parse(inp.lower())
+                        result = do_math((inp.lower()))
+                        print(result)
+                        speak.say("The answer to " + str(equation) + " is " + str(result))
+                if(tag == "Asking_about_the_weather"):
+                    if(confidence > 80):
+                        weather_active,city,gathered_weather_info=getWeatherInfo(inp)
 
-            if (tag == "Asking_about_the_date"):
-                if(confidence > 80):
-                    month, day, year = get_date()
-                    print("Month: ", month, " Day: ", day, " Year: ", year)
-                    speak.say("The date is " + str(month) + " " + str(day) + " " + str(year))
-            if (tag == "Doing_math"):
-                if(confidence > 80):
-                    equation = do_math_parse(inp.lower())
-                    result = do_math((inp.lower()))
-                    print(result)
-                    speak.say("The answer to " + str(equation) + " is " + str(result))
-            if(tag == "Asking_about_the_weather"):
-                if(confidence > 80):
-                    try:
-                        weather_active = True
-                        weather_info, city = weatherParse(inp.lower())
-                        gathered_weather_info = weather.get_weather(weather_info, city)
-                    except:
-                        weather_active = False
-                        print("Sorry, I couldn't get the weather information there")
-                        speak.say("Sorry, I couldn't get the weather information there")
+                if ((tag == "Voice_Detection_Activate") and (internet_check)):
+                    voice_detection = True
+                elif(tag == "voice detection"):
+                    print(colored("There is no internet connection", "red"))
 
-            if ((tag == "Voice_Detection_Activate") and (internet_check)):
-                voice_detection = True
-            elif(tag == "voice detection"):
-                print(colored("There is no internet connection", "red"))
+                if(retrain_Var == False):  # So it doesn't break when retraining
+                    if results[results_index] > 0.7:
+                        for tg in data["intents"]:
+                            if tg['tag'] == tag:
+                                responses = tg['responses']
+                        response = random.choice(responses)
+                        print("Tag: ",tag," Confidence: ",confidence,"%") # Debug
+                        speak = pyttsx3.init()
+                        if (search_active):
+                            print(response,searchingParse(inp.lower()))
+                            speak.say(response + searchingParse(inp.lower()))
+                            search_active = False
+                        elif (weather_active and sendMessage_active):
+                            speak.say("Sending to your device now")
+                            sendTextMessage("In " + city.capitalize() + "," + str(gathered_weather_info),"2404578587@messaging.sprintpcs.com")
+                            sendMessage_active=False
+                            weather_active=False
+                        elif(weather_active and sendMessage_active==False):
+                            print("In " + city.capitalize() + "," + str(gathered_weather_info))
+                            speak.say("In " + city + "," + gathered_weather_info)
+                            weather_active = False
+                        else:
+                            print(response)
+                            speak.say(response)
+                        speak.runAndWait()
 
-            if(retrain_Var == False):  # So it doesn't break when retraining
-                if results[results_index] > 0.7:
-                    for tg in data["intents"]:
-                        if tg['tag'] == tag:
-                            responses = tg['responses']
-                    response = random.choice(responses)
-                    print("Tag: ",tag," Confidence: ",confidence,"%") # Debug
-                    if (search_active):
-                        print(response,searchingParse(inp.lower()))
-                    elif(weather_active):
-                        print("In " + city.capitalize() + "," + str(gathered_weather_info))
+
                     else:
-                        print(response)
-                    speak = pyttsx3.init()
-                    if(search_active):  # Make it seem more user friendly
-                        speak.say(response+searchingParse(inp.lower()))
-                        search_active = False
-                    elif(weather_active):
-                        speak.say("In " + city + "," + gathered_weather_info)
-                        weather_active = False
-                    else:
-                        speak.say(response)
-                    speak.runAndWait()
-                else:
-                    sorry = "Sorry I didn't get that. Could you try typing or saying it in another way?"
-                    print("Sorry I didn't get that. Could you try typing or saying it in another way?")
-                    lowConfidenceInput(inp)
-                    speak = pyttsx3.init()
-                    speak.say(sorry)
-                    speak.runAndWait()
+                        sorry = "Sorry I didn't get that. Could you try typing or saying it in another way?"
+                        print("Sorry I didn't get that. Could you try typing or saying it in another way?")
+                        lowConfidenceInput(inp)
+                        speak = pyttsx3.init()
+                        speak.say(sorry)
+                        speak.runAndWait()
                     # print(tag) # Debugging
+def computeUserInput(inp):
+    """
+    This method is the brain that computes the actual responses based on the input from the user
+    :return:
+    """
+    results = model.predict([AI_Brain(inp, words)])[0]
+    results_index = np.argmax(results)
+    tag = labels[results_index]
+    confidence = results[results_index] * 100
+    return results, results_index, tag, confidence
+
+def getWeatherInfo(inp):
+    speak = pyttsx3.init()
+    try:
+        weather_active = True
+        weather_info, city = weatherParse(inp.lower())
+        gathered_weather_info = weather.get_weather(weather_info, city)
+        return weather_active, city, gathered_weather_info
+    except Exception as e:
+        print(e)
+        weather_active = False
+        print("Sorry, I couldn't get the weather information there")
+        speak.say("Sorry, I couldn't get the weather information there")
+        return weather_active,"",""
+
 
 def train():
     words_train = []
@@ -386,7 +434,37 @@ def make_search(user_search):  # puts together the online searching function (Ca
     query = searchingParse(user_search)
     searchingOnline(query)
 
+def sendMessageParse(user_input):
+    parse_list = ["and send it to my device", "and send it to my phone","and the results to my phone","and send the results to my device"]  # connect this to the json file later
+    parsed = user_input
+    first_index = 1
+    parse_out = ""
+    for i in range(len(parse_list)):
+        if (parse_list[i] in parsed):
+            parse_out = parse_list[i]
+    if (parse_out != ""):
+        for phrase in range(1):
+            # print("Before Parse: ", parsed)  # Debug
+            parsed = parsed.replace(parse_out, "", first_index)
+            # print("Remaining list: ", parsed)  # Debug
 
+    return parsed
+
+def sendTextMessage(user_input, to):
+    msg=EmailMessage()
+    msg.set_content(user_input)
+    #msg['subject'] = subject
+    msg['to']= to
+
+    user = "alexjchayes@gmail.com"
+    msg['from'] = user
+    password ="jgpcnxskaackrblt"
+
+    server = smtplib.SMTP("smtp.gmail.com", 587)
+    server.starttls()
+    server.login(user,password)
+    server.send_message(msg)
+    server.quit()
 
 # Weather function
 def weatherParse(user_input):
@@ -522,7 +600,19 @@ def learnDocFormat(intentList): # Have it be able to append to an already existi
   }
     return format
 
-def lowConfidenceInput(input):
+def intentTagTemplate(tag):  # for creating a new tag
+    template = {
+        "tag": tag,
+        "patterns": [
+        ],
+        "responses": [
+        ],
+        "context_set": "",
+        "patterens": ""
+    }
+    return template
+
+def lowConfidenceInput(input):     # writes to the lowConfidenceInput.json
     lowConfidenceDoc = open("lowConfidenceInput.json", "a+")
     lowConfidenceDoc.write('\n')
     lowConfidenceDoc.write(json.dumps(input, indent=1))
@@ -531,30 +621,55 @@ def lowConfidenceInput(input):
 def increaseConfidence(): # useful retrain function (needs to delete already implemented phrases from the lowConfidenceInput.json) and also need to add when there is a new tag being made
     with open("lowConfidenceInput.json") as file:
         lowConfidenceData = json.load(file)
+    lowConfidenceDataTemp = lowConfidenceData
+    print("LOL: ", lowConfidenceDataTemp)
+
     for phrase in lowConfidenceData:
         print("Enter tag for "+"'"+phrase+"'")
         tag = input("tag: ")
         print(lowConfidenceData)
         print(data["intents"])
         dataTemp = data["intents"] # stores the whole intents file into this variable
-        #print(dataTemp) # Debug
-        for tags in data["intents"]: #checking if a the tag already exists
-            index = dataTemp.index(tags) # get the index of the tag
-            print("The index is: ", index)
+        # print(dataTemp) # Debug
+        for tags in data["intents"]:  # checking if a the tag already exists
+            index = dataTemp.index(tags)  # get the index of the tag
+            # print("The index is: ", index)  # Debug
             if tags["tag"] == tag:
-                print("It is: ", dataTemp[index]) # Debug
-                print("yaaayy") # append the new phrase here # Debug
+                print("It is: ", dataTemp[index])  # Debug
+                print("yaaayy")  # append the new phrase here # Debug
                 tags["patterens"] = tags["patterns"].append(phrase)
-                print(tags["patterns"]) # make it properly append to the right spot in the intents.json file , might have to store the file in a variable and then append and then reformat it at the en
+                print(tags["patterns"])  # make it properly append to the right spot in the intents.json file , might have to store the file in a variable and then append and then reformat it at the end
                 print("\n")
                 print("Here: ", dataTemp[index]["patterns"])
                 intents = open("intents.json", "w")  # to save it as an original file to compare later
                 intents.write(json.dumps(learnDocFormat(dataTemp), indent=1))
                 intents.close()
-            else:
+            else:  # Delete this later once everything else is finished
                 print("nope")
+    for phrase in lowConfidenceData:
+        lowConfidenceDataTemp.remove(phrase)
+        #print("LOLOLOL:", lowConfidenceDataTemp)
+        lowConfidenceFile = open("lowConfidenceInput.json", "w")
+        lowConfidenceFile.write(json.dumps(lowConfidenceDataTemp))
+        lowConfidenceFile.close()
 
+def gttsSpeak(text):
+    """
+    :param text: alternate way of having it speak back to the user with a more human like voice
+    -have to find a way to make it take less time speaking
+    :return: nothing
+    """
+    tts = gTTS(text=text, lang="en")
 
+    filename = text.replace(" ","")
+    filename = filename + ".mp3"
+    print(len(glob.glob(filename)))
+    try:
+        if(os.path.exists(glob.glob(filename)[0])):
+            playsound.playsound(filename)
+    except:
+        tts.save(filename)
+        playsound.playsound(filename)
         # Code to auto format a brand new tag
 
 
@@ -578,9 +693,9 @@ except:
 ##########################
 
 ########## Run ########
-#chat()
+chat()
 #make_Learn_Doc()
 #print(learnDocFormat("blob"))
-increaseConfidence()
+#increaseConfidence()
 
 #subprocess.Popen("C:\Program Files (x86)\Steam\Steam.exe")  # work on this later
